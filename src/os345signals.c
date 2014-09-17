@@ -139,21 +139,16 @@ int sigSignal(int taskId, int sig)
 //
 void defaultSigContHandler(void)			// task mySIGCONT handler
 {
-//	printf("\ndefaultSigContHandler");
-    tcb[curTask].signal &= ~mySIGTSTP;
-    tcb[curTask].signal &= ~mySIGSTOP;
 	return;
 }
 
 void defaultSigIntHandler(void)			// task mySIGINT handler
 {
-	printf("\ndefaultSigIntHandler");
 	return;
 }
 
 void defaultSigKillHandler(void)			// task mySIGKILL handler
 {
-	printf("\ndefaultSigKillHandler");
 	return;
 }
 

@@ -16,6 +16,7 @@
 // **   DISCLAMER ** DISCLAMER ** DISCLAMER ** DISCLAMER ** DISCLAMER   **
 // ***********************************************************************
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -32,7 +33,7 @@ extern jmp_buf reset_context;
 // -----
 
 
-#define NUM_COMMANDS 49
+#define NUM_COMMANDS 52
 typedef struct								// command struct
 {
 	char* command;
@@ -66,6 +67,7 @@ Statement* newStatement();
 void deleteStatement(Statement* st);
 Command** P1_init(void);
 Command* newCommand(char*, char*, int (*func)(int, char**), char*);
+CommandHistory *cmdHistory;
 
 void mySigIntHandler()
 {
@@ -88,8 +90,15 @@ void mySigIntHandler()
 //
 int P1_shellTask(int argc, char* argv[])
 {
-	int i, j, found, newArgc;					// # of arguments
+	int i, j, found;					// # of arguments
 	char** newArgv;							// pointers to arguments
+    cmdHistory = malloc(sizeof(CommandHistory));
+    cmdHistory->history = calloc(MAX_HISTORY, sizeof(char*));
+    cmdHistory->head = -1;
+    cmdHistory->tail = -1;
+    cmdHistory->current = -1;
+    cmdHistory->size = 0;
+    cmdHistory->active = FALSE;
 
 	// initialize shell commands
 	commands = P1_init();					// init shell commands
@@ -103,8 +112,11 @@ int P1_shellTask(int argc, char* argv[])
 		else printf("\n%ld>>", swapCount);
 
 		SEM_WAIT(inBufferReady);			// wait for input buffer semaphore
+        H_OFF;
 		if (!inBuffer[0]) continue;		// ignore blank lines
 		// printf("%s", inBuffer);
+
+        addToHistory(inBuffer);
 
 		SWAP										// do context switch
 
@@ -121,7 +133,6 @@ int P1_shellTask(int argc, char* argv[])
 
 			// init arguments
             printf("\n");
-			newArgc = 0;
 			sp = inBuffer;				// point to input string
 
 			// parse input string
@@ -129,80 +140,105 @@ int P1_shellTask(int argc, char* argv[])
             j = 0;
             bool inQuote = FALSE;
             bool newArg = TRUE;
-            st->argv[st->argc] = malloc(max_len * sizeof(char) + 1);
+            bool ignore = FALSE;
+            st->argv[st->argc] = calloc(max_len, sizeof(char));
             for (i=0; i<max_len; ++i) { // for all characters in the input string
                 char c = sp[i];
                 bool place = FALSE;
-                if (c != '"' && inQuote)
-                    place = TRUE;
-                else {
-                    switch (c) {
-                        case '"':
-                            inQuote = (inQuote + 1) % 2; // FALSE=>TRUE or TRUE=>FALSE
-                            break;
-                        case ' ':
-                            // if there is something in the argument, we care about spaces
-                            if (j != 0) {
+                if (!ignore || c == '&' || c == '|') {
+                    if (c != '"' && inQuote)
+                        place = TRUE;
+                    else {
+                        c = tolower(c);
+                        switch (c) {
+                            case '"':
+                                inQuote = (inQuote + 1) % 2; // FALSE=>TRUE or TRUE=>FALSE
+                                break;
+                            case ' ':
+                                // if there is something in the argument, we care about spaces
+                                if (j != 0) {
+                                    ++(st->argc);
+                                    j = 0;
+                                    newArg = TRUE;
+                                }
+                                break;
+                            case '&':
+                                // set task true and increment argument #
+                                st->isTask = TRUE;
+                            case '|':
+                                ignore = FALSE;
                                 ++(st->argc);
+
+                                // create new statement
+                                st = newStatement();
+                                statements[stCount++] = st;
+
+                                // start at first argument
                                 j = 0;
                                 newArg = TRUE;
-                            }
-                            break;
-                        case '&':
-                            // set task true and increment argument #
-                            st->isTask = TRUE;
-                            ++(st->argc);
-
-                            // create new statement
-                            st = newStatement();
-                            statements[stCount++] = st;
-
-                            // start at first argument
-                            j = 0;
-                            newArg = TRUE;
-                            break;
-                        default:
-                            place = TRUE;
+                                break;
+                            default:
+                                place = TRUE;
+                        }
                     }
-                }
 
-                // we can place the character in the argument
-                if (place) {
-                    st->argv[st->argc][j] = c;
-                    ++j;
+                    // we can place the character in the argument
+                    if (place) {
+                        st->argv[st->argc][j] = c;
+                        ++j;
+                    }
+                    else if (newArg) { // if we are allocating space for a new argument
+                        if (st->argc >= MAX_ARGS) { // if we have too many arguments
+                            printf("Invalid statement: too many arguments\n");
+                            st->isValid = FALSE; // invalidate statement
+                            ignore = TRUE; // ignore all args until new statement
+                            inQuote = FALSE; // make sure this is unset, b/c we are ignoring everything
+                        }
+                        st->argv[st->argc] = calloc(max_len, sizeof(char));
+                    }
+                    newArg = FALSE;
                 }
-                else if (newArg) // if we are allocating space for a new argument
-                    st->argv[st->argc] = malloc(max_len * sizeof(char) + 1);
-                newArg = FALSE;
-
             }
-            ++(st->argc);
-            if (inQuote)
-                st->isValid = FALSE;
+
+            for (j = 0; j < stCount - 1; ++j) {
+                Statement* stmt = statements[j];
+                if (strlen(stmt->argv[stmt->argc - 1]) == 0)
+                    free(stmt->argv[--(stmt->argc)]);
+            }
+
+            // Check if last statement is empty (happens on '&' at end of buffer)
+            if (st->argc == 0 && strlen(st->argv[st->argc]) == 0) {
+                deleteStatement(st); // Delete the empty statement
+                statements[stCount--] = 0;
+                st = statements[stCount];
+            }
+            else { // If it is not empty
+                if (strlen(st->argv[st->argc]) == 0) // But the last argument is
+                    free(st->argv[st->argc]);
+                else
+                    ++(st->argc); // Make sure argc is accurate
+                if (inQuote) // Make sure quotations ended
+                    st->isValid = FALSE;
+            }
 
 		}	// ?? >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-        for (j = 0; j < stCount; ++j) {
-            Statement* st = statements[j];
-            for (i=0; i<st->argc; ++i) {
-                printf("args %d: %s\n", i, st->argv[i]);
-            }
-            printf("\n");
-        }
+        // Print out arguments
+//        for (j = 0; j < stCount; ++j) {
+//            Statement* st = statements[j];
+//            for (i=0; i<st->argc; ++i) {
+//               printf("st: %d - args %d: %s\n", j, i, st->argv[i]);
+//            }
+//        }
 
 		// look for command
         for (j = 0; j < stCount; ++j) {
             Statement* st = statements[j];
-            if (st->argc < 1) // If there are no arguments in the statement, don't do anything with it
-                continue;
-            else if (strlen(st->argv[st->argc - 1]) == 0) // If there is nothing in the last argument, ignore it
-                --(st->argc);
-
             if (st->isValid) {
                 for (found = i = 0; i < NUM_COMMANDS; i++)
                 {
-                    char *p;
-                    for (p = st->argv[0]; *p; ++p) *p = tolower(*p);
+//                    char *p;
+//                    for (p = st->argv[0]; *p; ++p) *p = tolower(*p);
 
                     if (!strcmp(st->argv[0], commands[i]->command) ||
                          !strcmp(st->argv[0], commands[i]->shortcut))
@@ -210,16 +246,17 @@ int P1_shellTask(int argc, char* argv[])
                         // command found
                         int retValue = 0;
                         if (st->isTask)
-                            retValue = createTask(st->argv[0], *commands[i]->func, 0, st->argc, st->argv);
-                        else
+                            createTask(st->argv[0], *commands[i]->func, 0, st->argc, st->argv);
+                        else {
                             retValue = (*commands[i]->func)(st->argc, st->argv);
-                        if (retValue) printf("\nCommand Error %d", retValue);
+                            if (retValue) printf("\nCommand Error %d", retValue);
+                        }
                         found = TRUE;
                         break;
                     }
                 }
             }
-            if (!found || !st->isValid)	printf("\nInvalid command!");
+            if (!found || !st->isValid)	printf("\nInvalid command: %s", st->argv[0]);
         }
 
 		// ?? free up any malloc'd argv parameters
@@ -251,6 +288,50 @@ int P1_project1(int argc, char* argv[])
 
 // ***********************************************************************
 // ***********************************************************************
+// history functions
+//
+int addToHistory(char* command) {
+    if (cmdHistory->tail - cmdHistory->head >= 0 // if tail comes after head
+            && cmdHistory->tail - cmdHistory->head < MAX_HISTORY - 1) { // and if we don't need to start rotating
+        cmdHistory->history[++(cmdHistory->tail)] = calloc(strlen(command), sizeof(char));
+        if (cmdHistory->head < 0)
+            cmdHistory->head = 0;
+    }
+    else {
+        cmdHistory->tail = (cmdHistory->tail + 1) % MAX_HISTORY;
+        cmdHistory->head = (cmdHistory->head + 1) % MAX_HISTORY;
+
+        // reallocate the memory in this location to new command size
+        cmdHistory->history[cmdHistory->tail]
+            = realloc(cmdHistory->history[cmdHistory->tail], strlen(command) * sizeof(char));
+
+        // set the reallocated space to 0
+        memset(cmdHistory->history[cmdHistory->tail], 0, strlen(command) * sizeof(char));
+    }
+    // copy command string into history
+    strcpy(cmdHistory->history[cmdHistory->tail], command);
+//    printf("\ntail: %d head: %d command: %s", cmdHistory->tail, cmdHistory->head, cmdHistory->history[cmdHistory->tail]);
+
+    // set current to tail
+    cmdHistory->current = cmdHistory->tail;
+    return cmdHistory->current;
+}
+
+// Turns command history on
+int historyOn() {
+    cmdHistory->active = TRUE;
+}
+
+// Turns command history off and resets it
+int historyOff() {
+    cmdHistory->active = FALSE;
+    cmdHistory->current = cmdHistory->tail;
+}
+
+
+
+// ***********************************************************************
+// ***********************************************************************
 // quit command
 //
 int P1_quit(int argc, char* argv[])
@@ -265,6 +346,13 @@ int P1_quit(int argc, char* argv[])
 		free(commands[i]->description);
 	}
 	free(commands);
+
+    for (i = 0; i < MAX_HISTORY; ++i)
+    {
+        free(cmdHistory->history[i]);
+    }
+    free(cmdHistory->history);
+    free(cmdHistory);
 
 	// powerdown OS345
 	longjmp(reset_context, POWER_DOWN_QUIT);
@@ -292,17 +380,79 @@ int P1_lc3(int argc, char* argv[])
 int P1_help(int argc, char* argv[])
 {
 	int i;
+    bool go = TRUE;
+    if (argc > 1)
+        go = FALSE;
 
 	// list commands
 	for (i = 0; i < NUM_COMMANDS; i++)
 	{
 		SWAP										// do context switch
-		if (strstr(commands[i]->description, ":")) printf("\n");
-		printf("\n%4s: %s", commands[i]->shortcut, commands[i]->description);
+        if (go ||
+             !strcmp(argv[1], commands[i]->command) ||
+             !strcmp(argv[1], commands[i]->shortcut))
+        {
+            if (strstr(commands[i]->description, ":")) printf("\n");
+            printf("\n%4s: %s", commands[i]->shortcut, commands[i]->description);
+        }
 	}
 
 	return 0;
 } // end P1_help
+
+// ***********************************************************************
+// ***********************************************************************
+// add command
+//
+int P1_add(int argc, char* argv[])
+{
+    int sum, i, a;
+    char* format;
+    sum = 0;
+    printf("\n");
+    for (i = 1; i < argc; ++i) {
+        format = "%d";
+        a = 0;
+        char* str = argv[i];
+        if (strlen(str) > 2) {
+            if (str[0] == '0' && str[1] == 'x')
+                format = "%x";
+        }
+        sscanf(str, format, &a);
+        sum += a;
+        printf("%d + ", a);
+    }
+    printf("\b\b= %d\n", sum);
+    return 0;
+}
+
+// ***********************************************************************
+// ***********************************************************************
+// date/time command
+//
+int P1_date(int argc, char* argv[])
+{
+    time_t curtime;
+    struct tm *info;
+    (void)time(&curtime);
+    info = localtime(&curtime);
+    printf("Current local date/time is %s", asctime(info));
+
+    return 0;
+}
+
+// ***********************************************************************
+// ***********************************************************************
+// args command
+//
+int P1_args(int argc, char* argv[])
+{
+    int i;
+    for (i = 0; i < argc; ++i) {
+        printf("\nargv[%d]: %s", i, argv[i]);
+    }
+    return 0;
+}
 
 // ***********************************************************************
 // ***********************************************************************
@@ -317,8 +467,7 @@ Statement* newStatement() {
 
     statement->argc = 0;
 
-    statement->argv = malloc(sizeof(MAX_ARGS * sizeof(char*)));
-
+    statement->argv = malloc(MAX_ARGS * sizeof(char*));
 
     return statement;
 }
@@ -373,6 +522,9 @@ Command** P1_init()
 	commands[i++] = newCommand("project1", "p1", P1_project1, "P1: Shell");
 	commands[i++] = newCommand("help", "he", P1_help, "OS345 Help");
 	commands[i++] = newCommand("lc3", "lc3", P1_lc3, "Execute LC3 program");
+    commands[i++] = newCommand("add", "add", P1_add, "Add _10 or _16 numbers together");
+    commands[i++] = newCommand("date/time", "dt", P1_date, "Output the current date and time");
+    commands[i++] = newCommand("args", "ar", P1_args, "Display the input args");
 
 	// P2: Tasking
 	commands[i++] = newCommand("project2", "p2", P2_project2, "P2: Tasking");

@@ -253,7 +253,7 @@ int ImAliveTask(int argc, char* argv[])
 	while (1)
 	{
 		printf("\n(%d) I'm Alive!", curTask);
-		for (i=0; i<100000; i++) swapTask();
+		for (i=0; i<300000; i++) swapTask();
 	}
 	return 0;						// terminate task
 } // end ImAliveTask

@@ -154,12 +154,40 @@ int semTryLock(Semaphore*);
 #define POWER_DOWN_RESTART    -1
 
 // ***********************************************************************
+// project structs
+#define H_UP                    historyUp()
+#define H_DOWN                  historyDown()
+#define H_ON                    historyOn()
+#define H_OFF                   historyOff()
+typedef struct
+{
+    char** history;
+    int head;
+    int tail;
+    int current;
+    int size;
+    bool active;
+} CommandHistory;
+
+extern CommandHistory *cmdHistory;
+#define MAX_HISTORY     25
+
+// ***********************************************************************
 // project prototypes
+int addToHistory(char*);
+int historyUp();
+int historyDown();
+int historyOn();
+int historyOff();
+
 int P1_project1(int, char**);
 int P1_shellTask(int, char**);
 int P1_help(int, char**);
 int P1_quit(int, char**);
 int P1_lc3(int, char**);
+int P1_add(int, char**);
+int P1_date(int, char**);
+int P1_args(int, char**);
 
 int P2_project2(int, char**);
 int P2_killTask(int, char**);

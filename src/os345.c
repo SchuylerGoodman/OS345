@@ -73,6 +73,7 @@ long swapCount;						// number of re-schedule cycles
 char inChar;						// last entered character
 int charFlag;						// 0 => buffered input
 int inBufIndx;						// input pointer into input buffer
+int cursor;
 char inBuffer[INBUF_SIZE+1];		// character input buffer
 //Message messages[NUM_MESSAGES];		// process message buffers
 
@@ -223,7 +224,7 @@ static int dispatcher()
 		case S_NEW:
 		{
 			// new task
-			printf("\nNew Task[%d] %s", curTask, tcb[curTask].name);
+			printf("\nNew Task[%d] %s\n", curTask, tcb[curTask].name);
 			tcb[curTask].state = S_RUNNING;	// set task to run state
 
 			// save kernel context for task SWAP's
@@ -346,6 +347,7 @@ static int initOS()
 	inChar = 0;							// last entered character
 	charFlag = 0;						// 0 => buffered input
 	inBufIndx = 0;						// input pointer into input buffer
+    cursor = 0;
 	semaphoreList = 0;					// linked list of active semaphores
 	diskMounted = 0;					// disk has been mounted
 
