@@ -25,4 +25,4 @@ debug: %.c
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
+	rm -f os345 $(ODIR)/*.o *~ core $(INCDIR)/*~
