@@ -56,6 +56,7 @@ int P3_project3(int argc, char* argv[])
 	createTask( buf,				// task name
 		jurassicTask,				// task
 		MED_PRIORITY,				// task priority
+        1,
 		1,								// task count
 		newArgv);					// task argument
 
@@ -124,12 +125,14 @@ int P3_tdc(int argc, char* argv[])
 	createTask( "DC Test",			// task name
 		dcMonitorTask,		// task
 		10,					// task priority
+        1,
 		argc,					// task arguments
 		argv);
 
 	timeTaskID = createTask( "Time",		// task name
 		timeTask,	// task
 		10,			// task priority
+        1,
 		argc,			// task arguments
 		argv);
 	return 0;

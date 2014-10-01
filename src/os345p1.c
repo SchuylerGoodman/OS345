@@ -237,8 +237,6 @@ int P1_shellTask(int argc, char* argv[])
             if (st->isValid) {
                 for (found = i = 0; i < NUM_COMMANDS; i++)
                 {
-//                    char *p;
-//                    for (p = st->argv[0]; *p; ++p) *p = tolower(*p);
 
                     if (!strcmp(st->argv[0], commands[i]->command) ||
                          !strcmp(st->argv[0], commands[i]->shortcut))
@@ -246,7 +244,7 @@ int P1_shellTask(int argc, char* argv[])
                         // command found
                         int retValue = 0;
                         if (st->isTask)
-                            createTask(st->argv[0], *commands[i]->func, HIGH_PRIORITY, st->argc, st->argv);
+                            createTask(st->argv[0], *commands[i]->func, HIGH_PRIORITY, 1, st->argc, st->argv);
                         else {
                             retValue = (*commands[i]->func)(st->argc, st->argv);
                             if (retValue) printf("\nCommand Error %d", retValue);

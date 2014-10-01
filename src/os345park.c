@@ -96,6 +96,7 @@ int jurassicTask(int argc, char* argv[])
 	createTask("displayPark",	// task name
 		jurassicDisplayTask,		// task
 		MED_PRIORITY,				// task priority
+        1,
 		1,								// task count
 		argv);						// task argument
 
@@ -106,6 +107,7 @@ int jurassicTask(int argc, char* argv[])
 	createTask("lostVisitor",	// task name
 		lostVisitorTask,			// task
 		MED_PRIORITY,				// task priority
+        1,
 		1,								// task count
 		argv);						// task argument
 

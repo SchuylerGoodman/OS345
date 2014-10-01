@@ -330,6 +330,7 @@ int P6_run(int argc, char* argv[])		// run lc3 program from RAM disk
 	createTask( myArgv[0],				// task name
 					lc3Task,					// task
 					MED_PRIORITY,			// task priority
+                    1,
 					2,							// task argc
 					myArgv);					// task arguments
 	return 0;

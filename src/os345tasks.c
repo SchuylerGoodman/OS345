@@ -43,6 +43,7 @@ extern PQueue rq;
 int createTask(char* name,						// task name
 					int (*task)(int, char**),	// task address
 					int priority,				// task priority
+                    int slice,                  // task time slice
 					int argc,					// task argument count
 					char** argv)				// task argument pointers
 {
@@ -69,6 +70,8 @@ int createTask(char* name,						// task name
 			tcb[tid].task = task;			// task address
 			tcb[tid].state = S_NEW;			// NEW task state
 			tcb[tid].priority = priority;	// task priority
+            tcb[tid].slice = slice;         // task time slice
+            tcb[tid].swapCount = 0;         // task times swapped since scheduling
 			tcb[tid].parent = curTask;		// parent
 			tcb[tid].argc = argc;			// argument count
 
@@ -142,6 +145,11 @@ static void exitTask(int taskId)
 
 	// ?? add code here
 
+    if (tcb[taskId].state == S_BLOCKED)
+    {
+        Semaphore* s = tcb[taskId].event;
+        deQ(s->q, taskId);
+    }
 	tcb[taskId].state = S_EXIT;			// EXIT task state
 	return;
 } // end exitTask
@@ -176,7 +184,6 @@ int sysKillTask(int taskId)
 			// move to next semaphore
 			semLink = (Semaphore**)&sem->semLink;
 		}
-        deQ(sem->q, taskId);
 	}
 
 	// ?? delete task from system queues

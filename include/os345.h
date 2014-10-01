@@ -95,6 +95,8 @@ typedef struct							// task control block
 	int (*task)(int,char**);		// task address
 	int state;							// task state
 	int priority;						// task priority (project 2)
+    int slice;                          // task time slice (project 2)
+    int swapCount;                      // task times swapped since scheduling (project 2)
 	int argc;							// task argument count (project 1)
 	char** argv;						// task argument pointers (project 1)
 	int signal;							// task signals (project 1)
@@ -126,7 +128,7 @@ typedef struct
 
 // ***********************************************************************
 // system prototypes
-int createTask(char*, int (*)(int, char**), int, int, char**);
+int createTask(char*, int (*)(int, char**), int, int, int, char**);
 int killTask(int taskId);
 void powerDown(int code);
 void swapTask(void);

@@ -514,6 +514,7 @@ void loadLC3File(char* string)
 	createTask( myArgv[0],				// task name
 					lc3Task,					// task
 					MED_PRIORITY,			// task priority
+                    1,
 					2,							// task argc
 				  	myArgv);					// task argv
 	return;

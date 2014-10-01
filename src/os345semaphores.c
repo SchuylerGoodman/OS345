@@ -54,37 +54,21 @@ void semSignal(Semaphore* s)
 		// binary semaphore
 		// look through tasks for one suspended on this semaphore
 
-//		for (i=0; i<MAX_TASKS; i++)	// look for suspended task
-//		{
-//			if (tcb[i].event == s)
-//			{
-            if (s->q[0] > 0) {
-				// ?? move task from blocked to ready queue
-                TID task;
-//                printf("Tasks in blocked queue before: %d\n", s->q[0]);
-//                printf("Moving highest task to ready\n");
-                if ((task = deQ(s->q, -1)) >= 0) { // TODO deal with not being in queue
-//                    printf("Task being moved to ready: %d\n",  task);
-                    enQ(rq, task, -1);
-                }
-//                printf("Task moved to ready: %d\n",  task);
-//                printf("Tasks in ready: %d\n", rq[0]);
-//                printf("Tasks in sem: %d\n", s->q[0]);
-
-                int j;
-//                for (j = 1; j <= s->q[0]; ++j) {
-//                    printf("%d - %d\n", i, s->q[j]);
-//                }
-				s->state = 0;				// clear semaphore
-				tcb[task].event = 0;			// clear event pointer
-				tcb[task].state = S_READY;	// unblock task
-//                printf("Task %d state: %d\n", task, tcb[task].state);
-
-				if (!superMode) swapTask();
-				return;
+        if (s->q[0] > 0) {
+            // ?? move task from blocked to ready queue
+            TID task;
+            if ((task = deQ(s->q, -1)) >= 0) { // TODO deal with not being in queue
+                enQ(rq, task, -1);
             }
-//			}
-//		}
+
+            s->state = 0;				// clear semaphore
+            tcb[task].event = 0;			// clear event pointer
+            tcb[task].state = S_READY;	// unblock task
+
+            if (!superMode) swapTask();
+            return;
+        }
+        //
 		// nothing waiting on semaphore, go ahead and just signal
 		s->state = 1;						// nothing waiting, signal
 		if (!superMode) swapTask();
@@ -98,23 +82,12 @@ void semSignal(Semaphore* s)
         {
             // ?? move task from blocked to ready queue
             TID task;
-//                printf("Tasks in blocked queue before: %d\n", s->q[0]);
-//                printf("Moving highest task to ready\n");
             if ((task = deQ(s->q, -1)) >= 0) { // TODO deal with not being in queue
-//                    printf("Task being moved to ready: %d\n",  task);
                 enQ(rq, task, -1);
             }
-//                printf("Task moved to ready: %d\n",  task);
-//                printf("Tasks in ready: %d\n", rq[0]);
-//                printf("Tasks in sem: %d\n", s->q[0]);
 
-            int j;
-//                for (j = 1; j <= s->q[0]; ++j) {
-//                    printf("%d - %d\n", i, s->q[j]);
-//                }
             tcb[task].event = 0;			// clear event pointer
             tcb[task].state = S_READY;	// unblock task
-//                printf("Task %d state: %d\n", task, tcb[task].state);
 
             if (!superMode) swapTask();
             return;
@@ -153,19 +126,10 @@ int semWait(Semaphore* s)
 			tcb[curTask].state = S_BLOCKED;
 
 			// ?? move task from ready queue to blocked queue
-//            printf("Tasks in ready before: %d\n", rq[0]);
-//            printf("Moving task %d to blocked\n", curTask);
             TID task;
             if ((task = deQ(rq, curTask)) >= 0) { // TODO deal with not being in queue
                 enQ(s->q, curTask, -1);
             }
-//            printf("Task removed from ready: %d\n",  task);
-//            printf("Tasks in ready: %d\n", rq[0]);
-//            printf("Tasks in sem: %d\n", s->q[0]);
-            int i;
-//            for (i = 1; i <= s->q[0]; ++i) {
-//                printf("%d - %d\n", i, s->q[i]);
-//            }
 
 			swapTask();						// reschedule the tasks
 			return 1;
@@ -181,24 +145,14 @@ int semWait(Semaphore* s)
 
         if (s->state <= 0)
         {
-
 			tcb[curTask].event = s;		// block task
 			tcb[curTask].state = S_BLOCKED;
 
 			// ?? move task from ready queue to blocked queue
-//            printf("Tasks in ready before: %d\n", rq[0]);
-//            printf("Moving task %d to blocked\n", curTask);
             TID task;
             if ((task = deQ(rq, curTask)) >= 0) { // TODO deal with not being in queue
                 enQ(s->q, curTask, -1);
             }
-//            printf("Task removed from ready: %d\n",  task);
-//            printf("Tasks in ready: %d\n", rq[0]);
-//            printf("Tasks in sem: %d\n", s->q[0]);
-            int i;
-//            for (i = 1; i <= s->q[0]; ++i) {
-//                printf("%d - %d\n", i, s->q[i]);
-//            }
 
 			swapTask();						// reschedule the tasks
 			return 1;

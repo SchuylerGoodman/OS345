@@ -92,6 +92,7 @@ int P5_project5(int argc, char* argv[])		// project 5
 		createTask(new_argv[0]				// task name
 				 , parentTask,				// parent task
 				   MED_PRIORITY,			// priority
+                   1,
 				   3,						// argc
 				   new_argv);				// argv
 		SEM_WAIT(parentDead);				// wait for parent to die
@@ -101,6 +102,7 @@ int P5_project5(int argc, char* argv[])		// project 5
 	createTask("Group Report"	,			// task name
 				groupReportTask,			// task
 				MED_PRIORITY,				// task priority
+                1,
 				2,							// task argc
 				groupReportArgv);			// task argument pointers
 	return 0;
@@ -128,6 +130,7 @@ int parentTask(int argc, char* argv[])		// group 1
 		createTask(buffer,					// task name
 				childTask,					// task
 				MED_PRIORITY,				// priority
+                1,
 				3,							// task argc
 				argv);						// task argument pointers
 		SEM_WAIT(childALive);				// wait until child is going

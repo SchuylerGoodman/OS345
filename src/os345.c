@@ -147,6 +147,7 @@ int main(int argc, char* argv[])
 	createTask("myShell",			// task name
 					P1_shellTask,	// task
 					MED_PRIORITY,	// task priority
+                    1,
 					argc,			// task arg count
 					argv);			// task argument pointers
 
@@ -236,7 +237,7 @@ static int dispatcher()
 		case S_NEW:
 		{
 			// new task
-			printf("\nNew Task[%d] %s\n", curTask, tcb[curTask].name);
+//			printf("\nNew Task[%d] %s\n", curTask, tcb[curTask].name);
 			tcb[curTask].state = S_RUNNING;	// set task to run state
 
 			// save kernel context for task SWAP's
@@ -265,6 +266,10 @@ static int dispatcher()
 
 		case S_READY:
 		{
+//            if (tcb[curTask].swapCount >= tcb[curTask].slice)
+//            {
+//                tcb[curTask].swapCount = 0;
+//            }
 			tcb[curTask].state = S_RUNNING;			// set task to run
 		}
 
@@ -319,6 +324,11 @@ void swapTask()
 
 	// increment swap cycle counter
 	swapCount++;
+
+//    if (tcb[curTask].state == S_RUNNING && ++tcb[curTask].swapCount < tcb[curTask].slice)
+//    {
+//        return;
+//    }
 
 	// either save current task context or schedule task (return)
 	if (setjmp(tcb[curTask].context))
