@@ -35,7 +35,7 @@ extern int curTask;							// current task #
 extern int superMode;						// system mode
 extern Semaphore* semaphoreList;			// linked list of active semaphores
 extern Semaphore* taskSems[MAX_TASKS];		// task semaphore
-
+extern PQueue rq;
 
 // **********************************************************************
 // **********************************************************************
@@ -90,6 +90,7 @@ int createTask(char* name,						// task name
 			tcb[tid].stack = malloc(STACK_SIZE * sizeof(int));
 
 			// ?? may require inserting task into "ready" queue
+            enQ(rq, tid, tcb[tid].priority);
 
 			if (tid) swapTask();				// do context switch (if not cli)
 			return tid;							// return tcb index (curTask)
@@ -175,9 +176,11 @@ int sysKillTask(int taskId)
 			// move to next semaphore
 			semLink = (Semaphore**)&sem->semLink;
 		}
+        deQ(sem->q, taskId);
 	}
 
 	// ?? delete task from system queues
+    deQ(rq, taskId);
     int i;
     for (i = 0; i < tcb[taskId].argc; ++i) {
         free(tcb[taskId].argv[i]);
@@ -187,3 +190,69 @@ int sysKillTask(int taskId)
 	tcb[taskId].name = 0;			// release tcb slot
 	return 0;
 } // end sysKillTask
+
+TID enQ(PQueue q, TID tid, Priority p) {
+    int i, numTasks, place;
+
+    if (p < 0)
+        p = tcb[tid].priority;
+
+    numTasks = q[0];
+
+    // check if queue is full
+    if (numTasks >= MAX_TASKS - 1)
+        return -1;
+
+    place = 1;
+    for (i = numTasks; i > 0; --i) {
+        int pt = tcb[q[i]].priority;
+        if (pt < p) {
+            place = i + 1;
+            break;
+        }
+    }
+
+    for (i = numTasks + 1; i > place; --i) { // scoot 'em up
+        q[i] = q[i - 1];
+    }
+
+    ++q[0];
+    q[place] = tid;
+
+    return tid;
+}
+
+TID deQ(PQueue q, TID tid) {
+    int i, numTasks, place, outTid;
+    place = 0;
+    numTasks = q[0];
+    
+    // check if queue is empty
+    if (numTasks <= 0)
+        return -1;
+
+    // check what we want to deq
+    if (tid < 0) // deq highest priority
+        place = numTasks;
+    else { // deq specific tid
+        for (i = numTasks; i > 0; --i) {
+            if (tid == q[i]) {
+                place = i;
+                break;
+            }
+        }
+    }
+
+    if (place == 0) // if tid not found
+        return -1;
+    else { // if task is being deq'd
+        outTid = q[place];
+        --q[0];
+        for (i = place; i <= q[0]; ++i) { // scoot 'em down
+            if (i < MAX_TASKS)
+                q[i] = q[i + 1];
+        }
+    }
+
+    return outTid;
+}

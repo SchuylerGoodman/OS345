@@ -54,6 +54,7 @@ Semaphore* charReady;				// character has been entered
 Semaphore* inBufferReady;			// input buffer ready semaphore
 
 Semaphore* tics1sec;				// 1 second semaphore
+Semaphore* tics10sec;
 Semaphore* tics10thsec;				// 1/10 second semaphore
 
 // **********************************************************************
@@ -82,9 +83,10 @@ int lastPollClock;					// last pollClock
 bool diskMounted;					// disk has been mounted
 
 time_t oldTime1;					// old 1sec time
+time_t oldTime10;
 clock_t myClkTime;
 clock_t myOldClkTime;
-int* rq;							// ready priority queue
+PQueue rq;							// ready priority queue
 
 
 // **********************************************************************
@@ -136,6 +138,7 @@ int main(int argc, char* argv[])
 	inBufferReady = createSemaphore("inBufferReady", BINARY, 0);
 	keyboard = createSemaphore("keyboard", BINARY, 1);
 	tics1sec = createSemaphore("tics1sec", BINARY, 0);
+    tics10sec = createSemaphore("tics10sec", COUNTING, 0);
 	tics10thsec = createSemaphore("tics10thsec", BINARY, 0);
 
 	//?? ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -196,15 +199,23 @@ static int scheduler()
 	// ?? priorities, clean up dead tasks, and handle semaphores appropriately.
 
 	// schedule next task
-	nextTask = ++curTask;
+	//nextTask = ++curTask;
 
 	// mask sure nextTask is valid
-	while (!tcb[nextTask].name)
-	{
-		if (++nextTask >= MAX_TASKS) nextTask = 0;
-	}
-	if (tcb[nextTask].signal & mySIGSTOP) return -1;
+//    do
+//	{
+//        printf("====deQ ready queue\n");
+        if ((nextTask = deQ(rq, -1)) >= 0) {
+//            printf("====enQ ready queue tid=%d\n", nextTask);
+            enQ(rq, nextTask, -1);
+        }
+//        printf("rq size: %d\n", rq[0]);
+//        printf("name: %s, tid: %d \n", tcb[nextTask].name, nextTask);
+//        printf("do: %d\n", !tcb[nextTask].name == TRUE);
+//	} while (!tcb[nextTask].name);
 
+	if (tcb[nextTask].signal & mySIGSTOP) return -1;
+    
 	return nextTask;
 } // end scheduler
 
@@ -217,6 +228,7 @@ static int scheduler()
 static int dispatcher()
 {
 	int result;
+    //printf("\ntask %d, state %d", curTask, tcb[curTask].state);
 
 	// schedule task
 	switch(tcb[curTask].state)
@@ -352,12 +364,14 @@ static int initOS()
 	diskMounted = 0;					// disk has been mounted
 
 	// malloc ready queue
-	rq = (int*)malloc(MAX_TASKS * sizeof(int));
+	rq = malloc(MAX_TASKS * sizeof(int));
 	if (rq == NULL) return 99;
+    rq[0] = 0;
 
 	// capture current time
 	lastPollClock = clock();			// last pollClock
 	time(&oldTime1);
+    time(&oldTime10);
 
 	// init system tcb's
 	for (i=0; i<MAX_TASKS; i++)

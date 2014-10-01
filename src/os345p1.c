@@ -246,7 +246,7 @@ int P1_shellTask(int argc, char* argv[])
                         // command found
                         int retValue = 0;
                         if (st->isTask)
-                            createTask(st->argv[0], *commands[i]->func, 0, st->argc, st->argv);
+                            createTask(st->argv[0], *commands[i]->func, HIGH_PRIORITY, st->argc, st->argv);
                         else {
                             retValue = (*commands[i]->func)(st->argc, st->argv);
                             if (retValue) printf("\nCommand Error %d", retValue);

@@ -45,6 +45,7 @@ extern Semaphore* charReady;				// character has been entered
 extern Semaphore* inBufferReady;			// input buffer ready semaphore
 
 extern Semaphore* tics1sec;				// 1 second semaphore
+extern Semaphore* tics10sec;
 extern Semaphore* tics10thsec;				// 1/10 second semaphore
 
 extern char inChar;				// last entered character
@@ -54,6 +55,7 @@ extern int cursor;
 extern char inBuffer[INBUF_SIZE+1];	// character input buffer
 
 extern time_t oldTime1;					// old 1sec time
+extern time_t oldTime10;
 extern clock_t myClkTime;
 extern clock_t myOldClkTime;
 
@@ -313,9 +315,18 @@ static void timer_isr()
   	if ((currentTime - oldTime1) >= 1)
   	{
 		// signal 1 second
-  	   semSignal(tics1sec);
+   	    semSignal(tics1sec);
 		oldTime1 += 1;
   	}
+
+	// ?? add other timer sampling/signaling code here for project 2
+    // ten second timer
+    if ((currentTime - oldTime10) >= 10)
+    {
+        // signal 10 second
+        semSignal(tics10sec);
+        oldTime10 += 10;
+    }
 
 	// sample fine clock
 	myClkTime = clock();
@@ -324,8 +335,6 @@ static void timer_isr()
 		myOldClkTime = myOldClkTime + ONE_TENTH_SEC;   // update old
 		semSignal(tics10thsec);
 	}
-
-	// ?? add other timer sampling/signaling code here for project 2
 
 	return;
 } // end timer_isr

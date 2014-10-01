@@ -35,11 +35,13 @@ static Semaphore* s2Sem;					// task 2 semaphore
 extern TCB tcb[];								// task control block
 extern int curTask;							// current task #
 extern Semaphore* semaphoreList;			// linked list of active semaphores
+extern Semaphore* tics10sec;
 extern jmp_buf reset_context;				// context of kernel stack
 
 // ***********************************************************************
 // project 2 functions and tasks
 
+int tenSecondTask(int, char**);
 int signalTask(int, char**);
 int ImAliveTask(int, char**);
 
@@ -51,9 +53,19 @@ int P2_project2(int argc, char* argv[])
 	static char* s1Argv[] = {"signal1", "s1Sem"};
 	static char* s2Argv[] = {"signal2", "s2Sem"};
 	static char* aliveArgv[] = {"I'm Alive", "3"};
+    static char* tenSecArgv[] = {};
 
 	printf("\nStarting Project 2");
 	SWAP;
+
+    int i;
+    for (i = 0; i < 10; ++i) {
+        createTask("tenSecondTask",
+                    tenSecondTask,
+                    HIGH_PRIORITY,
+                    0,
+                    tenSecArgv);
+    }
 
 	// start tasks looking for sTask semaphores
 	createTask("signal1",				// task name
@@ -221,6 +233,22 @@ int P2_signal2(int argc, char* argv[])		// signal2
 
 // ***********************************************************************
 // ***********************************************************************
+// tenSecond task
+//
+int tenSecondTask(int argc, char* argv[])
+{
+    char* svtime = malloc(100 * sizeof(char));
+    while(1)
+    {
+        SEM_WAIT(tics10sec);
+        printf("\n(%d) %s", curTask, myTime(svtime));
+        swapTask();
+    }
+    free(svtime);
+} // end tenSecondTask
+
+// ***********************************************************************
+// ***********************************************************************
 // signal task
 //
 #define COUNT_MAX	5
@@ -238,6 +266,7 @@ int signalTask(int argc, char* argv[])
 	{
 		SEM_WAIT(*mySem);			// wait for signal
 		printf("\n%s  Task[%d], count=%d", tcb[curTask].name, curTask, ++count);
+        SWAP;
 	}
 	return 0;						// terminate task
 } // end signalTask
@@ -253,7 +282,7 @@ int ImAliveTask(int argc, char* argv[])
 	while (1)
 	{
 		printf("\n(%d) I'm Alive!", curTask);
-		for (i=0; i<300000; i++) swapTask();
+		for (i=0; i<1000000; i++) swapTask();
 	}
 	return 0;						// terminate task
 } // end ImAliveTask

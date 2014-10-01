@@ -14,10 +14,10 @@ _OBJ=os345.o os345interrupts.o os345mmu.o os345p1.o os345p2.o os345p3.o os345p4.
 OBJ=$(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -g -c -o $@ $< $(CFLAGS)
 
 os345: $(OBJ)
-	gcc -o $@ $^ $(CFLAGS) $(LIBS)
+	gcc -g -o $@ $^ $(CFLAGS) $(LIBS)
 
 debug: %.c
 	gcc -o $@ -g $^ $(CFLAGS)

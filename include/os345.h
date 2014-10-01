@@ -31,6 +31,7 @@
 #define NUM_MESSAGES		500
 #define INBUF_SIZE			256
 #define ONE_TENTH_SEC		(CLOCKS_PER_SEC/10)
+#define TEN_SEC             (CLOCKS_PER_SEC*10)
 
 // Default priorities
 #define LOW_PRIORITY		1
@@ -70,6 +71,12 @@
 typedef int bool;						// boolean value
 typedef int TID;						// task id
 
+// priority queue
+typedef int Priority;                   // task priority
+typedef int* PQueue;                    // priority queue
+TID enQ(PQueue q, TID tid, Priority p);
+TID deQ(PQueue q, TID tid);
+
 // semaphore
 typedef struct semaphore			// semaphore
 {
@@ -78,6 +85,7 @@ typedef struct semaphore			// semaphore
 	int state;							// semaphore state
 	int type;							// semaphore type
 	int taskNum;						// semaphore creator task #
+    PQueue q;                           // blocked queue
 } Semaphore;
 
 // task control block
