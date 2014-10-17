@@ -126,6 +126,14 @@ typedef struct
 } Message;
 #define MAX_MESSAGE_SIZE		64
 
+// DC struct
+typedef struct deltaclock               // delta clock event
+{
+    struct deltaclock* clockLink;       // delta clock event link
+    int time;                          // 10ths of sec until scheduling
+    Semaphore* sem;                     // semaphore to signal on event
+} DeltaClock;
+
 // ***********************************************************************
 // system prototypes
 int createTask(char*, int (*)(int, char**), int, int, int, char**);
@@ -143,6 +151,9 @@ void semSignal(Semaphore*);
 int semWait(Semaphore*);
 int semTryLock(Semaphore*);
 
+bool insertDeltaClock(int time, Semaphore* sem);
+int tickDelta(int, char**);
+void printDeltaClock(void);
 
 // ***********************************************************************
 #define POWER_UP					0
@@ -209,6 +220,7 @@ int P2_signal2(int, char**);
 
 int P3_project3(int, char**);
 int P3_dc(int, char**);
+int P3_tdc(int, char**);
 
 int P4_project4(int, char**);
 int P4_dumpFrame(int, char**);

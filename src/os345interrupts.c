@@ -48,6 +48,9 @@ extern Semaphore* tics1sec;				// 1 second semaphore
 extern Semaphore* tics10sec;
 extern Semaphore* tics10thsec;				// 1/10 second semaphore
 
+extern DeltaClock* deltaClockList;          // delta clock list
+extern Semaphore* deltaClockMutex;          // mutex for delta clock access
+
 extern char inChar;				// last entered character
 extern int charFlag;				// 0 => buffered input
 extern int inBufIndx;				// input pointer into input buffer
@@ -334,6 +337,7 @@ static void timer_isr()
 	{
 		myOldClkTime = myOldClkTime + ONE_TENTH_SEC;   // update old
 		semSignal(tics10thsec);
+//        tickDelta(); 
 	}
 
 	return;

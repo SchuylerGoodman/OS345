@@ -188,14 +188,13 @@ int semTryLock(Semaphore* s)
 		{
 			return 0;
 		}
+
 		// state is non-zero (semaphore already signaled)
-		s->state = 0;						// reset state, and don't block
 		return 1;
 	}
 	else
 	{
 		// counting semaphore
-		// ?? implement counting semaphore
 
         if (s->state <= 0)
         {
@@ -203,7 +202,6 @@ int semTryLock(Semaphore* s)
         }
 
 		// state is non-zero (semaphore already signaled)
-        s->state--;
         return 1;
 	}
 } // end semTryLock
@@ -220,6 +218,7 @@ int semTryLock(Semaphore* s)
 //
 Semaphore* createSemaphore(char* name, int type, int state)
 {
+
 	Semaphore* sem = semaphoreList;
 	Semaphore** semLink = &semaphoreList;
 

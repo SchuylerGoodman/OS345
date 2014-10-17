@@ -57,6 +57,8 @@ Semaphore* tics1sec;				// 1 second semaphore
 Semaphore* tics10sec;
 Semaphore* tics10thsec;				// 1/10 second semaphore
 
+Semaphore* deltaClockMutex;          // mutex for delta clock access
+
 // **********************************************************************
 // **********************************************************************
 // global system variables
@@ -87,6 +89,7 @@ time_t oldTime10;
 clock_t myClkTime;
 clock_t myOldClkTime;
 PQueue rq;							// ready priority queue
+DeltaClock* deltaClockList;          // delta clock list
 
 
 // **********************************************************************
@@ -140,6 +143,7 @@ int main(int argc, char* argv[])
 	tics1sec = createSemaphore("tics1sec", BINARY, 0);
     tics10sec = createSemaphore("tics10sec", COUNTING, 0);
 	tics10thsec = createSemaphore("tics10thsec", BINARY, 0);
+    deltaClockMutex = createSemaphore("deltaClockMutex", BINARY, 1);
 
 	//?? ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -424,6 +428,14 @@ void powerDown(int code)
 	// delete all semaphores
 	while (semaphoreList)
 		deleteSemaphore(&semaphoreList);
+
+    DeltaClock* dc = deltaClockList;
+    while (dc)
+    {
+        DeltaClock* old = dc;
+        dc = dc->clockLink;
+        free(old);
+    }
 
 	// free ready queue
 	free(rq);
