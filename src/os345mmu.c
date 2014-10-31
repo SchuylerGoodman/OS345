@@ -46,6 +46,7 @@ int getFrame(int);
 int getAvailableFrame(void);
 int runClock(int);
 bool tableIsEmpty(int);
+int swapFrame(int, int, int, int);
 
 // clock replacement data
 int startFrame;
@@ -194,7 +195,7 @@ bool tableIsEmpty(int upta)
     return TRUE;
 }
 
-bool swapFrame(int pta, int pte1, int pte2, int frame)
+int swapFrame(int pta, int pte1, int pte2, int frame)
 {
     // If pte has been paged
     int pnum;
