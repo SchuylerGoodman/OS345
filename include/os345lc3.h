@@ -44,6 +44,11 @@
 #define UPTI(va)          (((va)&BITS_10_6_MASK)>>5)
 #define FRAMEOFFSET(va)   ((va)&BITS_5_0_MASK)
 
+// increment virtual addresses
+#define INCR_RPTI(va)     ((va)+RPTI_1_MASK)
+#define INCR_UPTI(va)     ((va)+UPTI_1_MASK)
+#define INCR_OFFSET(va)   ((va)+OFFSET_1_MASK)
+
 // definitions within a root or user table page
 #define DEFINED(e1)       ((e1)&BIT_15_MASK)
 #define DIRTY(e1)         ((e1)&BIT_14_MASK)
@@ -100,6 +105,10 @@
 
 #define MASKTO8BITS(v) (BITS_7_0_MASK&(v))
 #define MASKTO16BITS(v) (BITS_15_0_MASK&(v))
+
+#define RPTI_1_MASK     0x0800
+#define UPTI_1_MASK     0x0040
+#define OFFSET_1_MASK   0x0001
 
 // ---------------------------------------------------------------------
 // Error Messages
