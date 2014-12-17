@@ -32,6 +32,7 @@
 #define INBUF_SIZE			256
 #define ONE_TENTH_SEC		(CLOCKS_PER_SEC/10)
 #define TEN_SEC             (CLOCKS_PER_SEC*10)
+#define MAX_TASK_TIME       (MAX_TASKS*5)
 
 // Default priorities
 #define LOW_PRIORITY		1
@@ -64,6 +65,10 @@
 #define PAGE_OLD_WRITE 		1
 #define PAGE_READ      		0
 #define PAGE_INIT     		-1
+
+// Scheduler mode
+#define PRIORITIZED         0
+#define FAIR                1
 
 
 // ***********************************************************************
@@ -107,6 +112,7 @@ typedef struct							// task control block
 	void (*sigTstpHandler)(void);	// task mySIGTSTP handler
 	TID parent;							// task parent
 	int RPT;								// task root page table (project 5)
+    int time;                           // task fair scheduling time
 	int cdir;							// task directory (project 6)
 	Semaphore *event;					// blocked task semaphore
 	void* stack;						// task stack
@@ -154,6 +160,8 @@ int semTryLock(Semaphore*);
 bool insertDeltaClock(int time, Semaphore* sem);
 int tickDelta(int, char**);
 void printDeltaClock(void);
+
+int getFair(void);
 
 // ***********************************************************************
 #define POWER_UP					0

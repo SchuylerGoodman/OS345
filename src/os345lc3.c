@@ -274,7 +274,9 @@ int lc3Task(int argc, char* argv[])
                   // IN:   R0 = int fileDescriptor
                   // OUT:  R0 = 0-success, otherwise error
 						if (LC3_DEBUG&0x01) printf(TRAP_MSG, oldpc, "fmsCloseFile");
+                        //printf("\ntrying to close %d", LC3_REGS[0]);
 						LC3_REGS[0] = fmsCloseFile((short int)LC3_REGS[0]);       // int fileDescriptor
+                        //printf("\nafter close: %d", LC3_REGS[0]);
 						SWAP
 						break;
                }
@@ -340,6 +342,7 @@ int lc3Task(int argc, char* argv[])
 						LC3_REGS[0] = fmsReadFile((short int)LC3_REGS[0],              // int fileDescriptor
                                             (char*)getMemAdr(LC3_REGS[1], 0),    // char* buffer
                                             (short int)LC3_REGS[2]);             // int nBytes
+                        printf("\nbuffer %s", (char*)getMemAdr(LC3_REGS[1], 0));
 						SWAP
 						break;
                }

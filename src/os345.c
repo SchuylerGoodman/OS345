@@ -204,20 +204,22 @@ static int scheduler()
 	// ?? priorities, clean up dead tasks, and handle semaphores appropriately.
 
 	// schedule next task
-	//nextTask = ++curTask;
-
 	// mask sure nextTask is valid
-//    do
-//	{
-//        printf("====deQ ready queue\n");
+    if (scheduler_mode == 0)
+    {
         if ((nextTask = deQ(rq, -1)) >= 0) {
-//            printf("====enQ ready queue tid=%d\n", nextTask);
             enQ(rq, nextTask, -1);
         }
-//        printf("rq size: %d\n", rq[0]);
-//        printf("name: %s, tid: %d \n", tcb[nextTask].name, nextTask);
-//        printf("do: %d\n", !tcb[nextTask].name == TRUE);
-//	} while (!tcb[nextTask].name);
+    }
+    else if (scheduler_mode > 0)
+    {
+        nextTask = getFair();
+        //printf("Next task: %d\n", nextTask);
+    }
+    else
+    {
+        return -1;
+    }
 
 	if (tcb[nextTask].signal & mySIGSTOP) return -1;
     
@@ -369,7 +371,7 @@ static int initOS()
 	// reset system variables
 	curTask = 0;						// current task #
 	swapCount = 0;						// number of scheduler cycles
-	scheduler_mode = 0;					// default scheduler
+	scheduler_mode = PRIORITIZED;		// default scheduler
 	inChar = 0;							// last entered character
 	charFlag = 0;						// 0 => buffered input
 	inBufIndx = 0;						// input pointer into input buffer

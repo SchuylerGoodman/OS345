@@ -29,6 +29,9 @@
 // ***********************************************************************
 // project 5 variables
 
+int getFair(void);
+void resetFair(int, int);
+bool needsReset(void);
 int parentTask(int argc, char* argv[]);
 int groupReportTask(int argc, char* argv[]);
 int childTask(int argc, char* argv[]);
@@ -38,6 +41,7 @@ Semaphore* parentDead;				// parent dead
 extern Semaphore* tics1sec;			// 1 second semaphore
 extern int curTask;					// current task #
 extern int scheduler_mode;			// scheduler mode
+extern TCB tcb[];
 long int group_count[NUM_PARENTS];	// parent group counters
 int num_siblings[NUM_PARENTS];		// number in each group
 
@@ -108,6 +112,65 @@ int P5_project5(int argc, char* argv[])		// project 5
 	return 0;
 } // end P5_project5
 
+
+int getFair()
+{
+    int i;
+    int nextTask = curTask + 1;
+    if (needsReset())
+    {
+        resetFair(0, MAX_TASK_TIME);
+    }
+    while (!tcb[nextTask].name || tcb[nextTask].time <= 0)
+    {
+        if (nextTask == 0) return nextTask;
+        if (++nextTask >= MAX_TASKS) nextTask = 0;
+    }
+    if (nextTask != 0) tcb[nextTask].time--;
+    return nextTask;
+}
+
+
+void resetFair(int parent_tid, int remaining)
+{
+    int i;
+    int count = 1;
+    for (i = 1; i < MAX_TASKS; ++i)
+    {
+        if (tcb[i].name && tcb[i].parent == parent_tid)
+        {
+            ++count;
+        }
+    }
+
+    int each_time = remaining / count;
+    int parent_time = each_time + (remaining % count);
+    if (parent_tid != 0)
+    {
+        tcb[parent_tid].time = parent_time;
+    }
+    for (i = 1; i < MAX_TASKS; ++i)
+    {
+        if (tcb[i].name && tcb[i].parent == parent_tid)
+        {
+            resetFair(i, each_time);
+        }
+    }
+}
+
+
+bool needsReset()
+{
+    int i;
+    for (i = 1; i < MAX_TASKS; ++i)
+    {
+        if (tcb[i].time > 0)
+        {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
 
 
 // ***********************************************************************

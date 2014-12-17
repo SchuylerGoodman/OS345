@@ -275,7 +275,7 @@ int P6_mount(int argc, char* argv[])		// mount RAM disk
 
 	assert("64-bit" && (sizeof(DirEntry) == 32));
 
-	if (argc < 2) strcat(temp, "c:/lcc/projects/disk4");
+	if (argc < 2) strcat(temp, "mounts/disk4");
 		else strcat(temp, argv[1]);
 	printf("\nMount Disk \"%s\"", temp);
 
@@ -1101,7 +1101,9 @@ int fmsTests(int test, bool debug)
 				try(tFID[test2] = fmsOpenFile(buf2, OPEN_APPEND));
 				// read word from word file
 				try(fmsReadFile(tFID[i], buf, strlen(text[i])));
+                if (debug) printf("\n fmsReadFile() - word %s", buf);
 				// write to buffer
+                if (debug) printf("\n fmsWriteFile(%d, %s, %d)", tFID[test2], buf, strlen(text[i]));
 				try(fmsWriteFile(tFID[test2], buf, strlen(text[i])));
 				// close word file
 				if (debug) printf("\n  fmsCloseFile(%d)", tFID[i]);
@@ -1120,6 +1122,7 @@ int fmsTests(int test, bool debug)
 
 			if (debug) printf("\n  fmsCloseFile(%d)", test2);
 			try(fmsCloseFile(tFID[test2]));
+            printf("\nBuffer - %s\nResult - %s", rBuf, result);
 			return strcmp(rBuf, result);
 		}
 
@@ -1151,6 +1154,7 @@ int fmsTests(int test, bool debug)
 			{
 				if (debug) printf("\n  Write \"%s\" to position %d", text[i], index[i]);
 				try(fmsSeekFile(t3FID, index[i]));
+                if (debug) printf("\n  Writing now");
 				try(fmsWriteFile(t3FID, text[i], strlen(text[i])));
 			}
 
@@ -1158,9 +1162,12 @@ int fmsTests(int test, bool debug)
 			rBuf[0] = 0;
 			for (i=0; i<numWords; i++)
 			{	//memset(buf, 0, sizeof(buf));
+                if (debug) printf("\n  Seeking to position %d in %d", index[i], t3FID);
 				try(fmsSeekFile(t3FID, index[i]));
+                if (debug) printf("\n  Reading from %d - %d bytes to %s", t3FID, strlen(text[i]), buf);
 				if ((error = fmsReadFile(t3FID, buf, strlen(text[i]))) > 0)
 					strncat(rBuf, buf, strlen(text[i]));
+                if (debug) printf("\n  Read from %d - %d bytes to %s", t3FID, strlen(text[i]), buf);
 				if (error <= 0) FERROR("\nFailed fmsReadFile(%d)",t3FID,error);
 			}
 			printf("\n  %s", rBuf);

@@ -56,7 +56,8 @@ typedef struct
 	uint8	name[8];	      	// file name
 	uint8	extension[3];		// extension
 	uint8	attributes;		   	// file attributes code
-	uint16	directoryCluster;	// directory cluster
+	
+    uint16	directoryCluster;	// directory cluster
 	uint16	startCluster;		// first cluster of the file
 	uint16	currentCluster;		// current cluster in buffer
 	uint32	fileSize;	   		// file size in bytes

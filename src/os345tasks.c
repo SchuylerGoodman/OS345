@@ -75,6 +75,7 @@ int createTask(char* name,						// task name
             tcb[tid].swapCount = 0;         // task times swapped since scheduling
 			tcb[tid].parent = curTask;		// parent
 			tcb[tid].argc = argc;			// argument count
+            tcb[tid].time = 0;              // fair scheduler time
 
 			// ?? malloc new argv parameters
 			tcb[tid].argv = malloc(argc * sizeof(char*));			// argument pointers
@@ -85,7 +86,7 @@ int createTask(char* name,						// task name
 
 			tcb[tid].event = 0;				// suspend semaphore
 			tcb[tid].RPT = LC3_RPT + ((tid) ? (tid<<6) : 0);	// root page table (project 5)
-            printf("\nRPT: %x tid: %d", tcb[tid].RPT, tid);
+            //printf("\nRPT: %x tid: %d", tcb[tid].RPT, tid);
 			tcb[tid].cdir = CDIR;			// inherit parent cDir (project 6)
 
 			// define task signals
